@@ -48,7 +48,8 @@ colnames(df2) <- df2[1,]
 
 ```{r save-data, warning=FALSE} 
 ## use saveRDS() to save each object as a .rds file 
-
+saveRDS(df1, file = "/cloud/project/data/raw_data/df_department.rds")
+saveRDS(df2, file = "/cloud/project/data/raw_data/df_retail.rds")
 ```
 
 ### Wrangle Data
@@ -64,7 +65,7 @@ df_retail <- df2 %>%
   ## filter to include Retail sales or Department stores sales
   filter(grepl('Retail sales, total |Department stores', business)) %>%
   ## only look at columns with year information in them
-  select(.,c(matches('19|20'),business)) %>%
+  select(., c(matches('19|20'), business)) %>%
   ## take year column and collapse them into a single column
   gather(., "year", "n", 1:(ncol(.)-1)) %>%
   ## make sure the count column `n` is numeric
@@ -78,33 +79,33 @@ df_retail <- df2 %>%
 ## work with df1
 df_department <- df1 %>% 
   ## split Period column into one column called "month" and one called "year"
-  function_name() %>%
+  separate(Period, into = c('month','year'), extra = 'drop', remove = FALSE) %>% 
   ## add a column `value` which contains the 
   ## information from the `Value (in millions)` 
-  function_name() %>%
+  mutate(value = `Value (in millions)`) %>%
   ## group the data frame by the `year` column
-  function_name() %>%
+  group_by(year) %>%
   ## Summarize the data by creating a new column
   ## call this column `n` 
   ## have it contain the sum of the `value` column
-  function_name() %>% 
+  summarize(n = sum(value)) %>% 
   ### create a new column called `business`
   ## set the value of this column to  be "department stores" 
   ## for the entire data set 
-  function_name() %>%
+  mutate(business = "department stores") %>%
   ## reorder column names to be : business, year, n
-  function_name()
+  select(business, year, n)
 ```
 
 ```{r merge-data, warning=FALSE} 
 ## Now, combine the two data frames
-df_total <- function_name()
+df_total <- full_join(df_department, df_retail, by = c("business", "year", "n"))
+
 ```
 
 ```{r plot, warning=FALSE, fig.width=10} 
 ## Plot Retail Sales data
-ggplot(df_retail, aes(x=year,y=n,colour=business)) +
-  geom_point() 
+ggplot(df_retail, aes(x=year,y=n,colour=business)) + geom_point() 
 
 ## Plot Department Sales data
 ggplot(df_department, aes(x=year,y=n)) +
